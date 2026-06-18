@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Просмотр модели GLB</title>
+<title>3D модель с атрибутами</title>
 
 <style>
 body{
@@ -26,13 +26,29 @@ body{
     position:absolute;
     top:10px;
     right:10px;
-    width:350px;
+    width:400px;
     max-height:90vh;
     overflow:auto;
     background:white;
     border:1px solid #ccc;
     padding:10px;
     z-index:100;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:4px;
+    vertical-align:top;
+}
+
+.key{
+    font-weight:bold;
+    width:140px;
 }
 </style>
 </head>
@@ -42,7 +58,7 @@ body{
 <div id="loading">Загрузка модели...</div>
 
 <div id="info">
-Нажмите на объект модели
+Выберите объект на модели
 </div>
 
 <script type="module">
@@ -52,11 +68,11 @@ import { OrbitControls } from "https://unpkg.com/three@0.162.0/examples/jsm/cont
 import { GLTFLoader } from "https://unpkg.com/three@0.162.0/examples/jsm/loaders/GLTFLoader.js";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf0f0f0);
+scene.background = new THREE.Color(0xf2f2f2);
 
 const camera = new THREE.PerspectiveCamera(
 45,
-window.innerWidth / window.innerHeight,
+window.innerWidth/window.innerHeight,
 0.1,
 100000
 );
@@ -79,13 +95,25 @@ renderer.domElement
 
 controls.enableDamping = true;
 
-scene.add(new THREE.AmbientLight(0xffffff,3));
+scene.add(
+new THREE.AmbientLight(0xffffff,3)
+);
 
-const light = new THREE.DirectionalLight(0xffffff,3);
-light.position.set(100,100,100);
-scene.add(light);
+const dirLight = new THREE.DirectionalLight(
+0xffffff,
+3
+);
+
+dirLight.position.set(
+100,
+100,
+100
+);
+
+scene.add(dirLight);
 
 let model = null;
+let selected = null;
 
 const loader = new GLTFLoader();
 
@@ -105,17 +133,19 @@ model.traverse(()=>{
 count++;
 });
 
-const box = new THREE.Box3().setFromObject(model);
-const center = box.getCenter(new THREE.Vector3());
-const size = box.getSize(new THREE.Vector3());
+const box =
+new THREE.Box3().setFromObject(model);
+
+const center =
+box.getCenter(new THREE.Vector3());
+
+const size =
+box.getSize(new THREE.Vector3());
 
 model.position.sub(center);
 
-const maxDim = Math.max(
-size.x,
-size.y,
-size.z
-);
+const maxDim =
+Math.max(size.x,size.y,size.z);
 
 camera.position.set(
 maxDim,
@@ -125,13 +155,10 @@ maxDim
 
 camera.lookAt(0,0,0);
 
-controls.update();
-
 document.getElementById('loading').innerHTML =
 '✅ Модель загружена. Объектов: ' + count;
 
-console.log('GLB успешно загружен');
-console.log('Количество объектов:', count);
+console.log(model);
 
 },
 
@@ -140,12 +167,12 @@ console.log('Количество объектов:', count);
 if(xhr.total){
 
 const percent =
-Math.round((xhr.loaded / xhr.total) * 100);
+Math.round(
+(xhr.loaded/xhr.total)*100
+);
 
 document.getElementById('loading').innerHTML =
-'Загрузка модели: ' + percent + '%';
-
-console.log('Загрузка:', percent + '%');
+'Загрузка: ' + percent + '%';
 
 }
 
@@ -162,18 +189,21 @@ console.error(error);
 
 );
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+const raycaster =
+new THREE.Raycaster();
+
+const mouse =
+new THREE.Vector2();
 
 window.addEventListener('click',(event)=>{
 
 if(!model) return;
 
 mouse.x =
-(event.clientX / window.innerWidth) * 2 - 1;
+(event.clientX/window.innerWidth)*2-1;
 
 mouse.y =
--(event.clientY / window.innerHeight) * 2 + 1;
+-(event.clientY/window.innerHeight)*2+1;
 
 raycaster.setFromCamera(
 mouse,
@@ -186,26 +216,72 @@ model.children,
 true
 );
 
-if(intersects.length > 0){
+if(intersects.length===0) return;
 
-const obj = intersects[0].object;
+const obj =
+intersects[0].object;
 
-document.getElementById('info').innerHTML =
-'<h3>' + (obj.name || 'Без имени') + '</h3>' +
-'<pre>' +
-JSON.stringify(obj.userData,null,2) +
-'</pre>';
+if(
+selected &&
+selected.material &&
+selected.material.emissive
+){
+selected.material.emissive.setHex(0x000000);
+}
 
-console.log(obj);
+selected = obj;
+
+if(
+obj.material &&
+obj.material.emissive
+){
+obj.material.emissive.setHex(0xffff00);
+}
+
+let html =
+'<h3>' +
+(obj.name || 'Объект') +
+'</h3>';
+
+html += '<table>';
+
+for(const key in obj.userData){
+
+html +=
+'<tr>' +
+'<td class="key">'+key+'</td>' +
+'<td>' +
+JSON.stringify(
+obj.userData[key]
+) +
+'</td>' +
+'</tr>';
 
 }
+
+html += '</table>';
+
+if(
+Object.keys(obj.userData).length===0
+){
+
+html +=
+'<p><b>Атрибуты не найдены у выбранного объекта.</b></p>';
+
+}
+
+document.getElementById('info').innerHTML =
+html;
+
+console.log(obj);
+console.log(obj.userData);
 
 });
 
 window.addEventListener('resize',()=>{
 
 camera.aspect =
-window.innerWidth / window.innerHeight;
+window.innerWidth/window.innerHeight;
 
 camera.updateProjectionMatrix();
 
@@ -218,7 +294,9 @@ window.innerHeight
 
 function animate(){
 
-requestAnimationFrame(animate);
+requestAnimationFrame(
+animate
+);
 
 controls.update();
 
