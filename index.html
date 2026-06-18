@@ -99,6 +99,12 @@ model = gltf.scene;
 
 scene.add(model);
 
+let count = 0;
+
+model.traverse(()=>{
+count++;
+});
+
 const box = new THREE.Box3().setFromObject(model);
 const center = box.getCenter(new THREE.Vector3());
 const size = box.getSize(new THREE.Vector3());
@@ -109,6 +115,51 @@ const maxDim = Math.max(
 size.x,
 size.y,
 size.z
+);
+
+camera.position.set(
+maxDim,
+maxDim,
+maxDim
+);
+
+camera.lookAt(0,0,0);
+
+controls.update();
+
+document.getElementById('loading').innerHTML =
+'✅ Модель загружена. Объектов: ' + count;
+
+console.log('GLB успешно загружен');
+console.log('Количество объектов:', count);
+
+},
+
+(xhr)=>{
+
+if(xhr.total){
+
+const percent =
+Math.round((xhr.loaded / xhr.total) * 100);
+
+document.getElementById('loading').innerHTML =
+'Загрузка модели: ' + percent + '%';
+
+console.log('Загрузка:', percent + '%');
+
+}
+
+},
+
+(error)=>{
+
+document.getElementById('loading').innerHTML =
+'❌ Ошибка загрузки модели';
+
+console.error(error);
+
+}
+
 );
 
 camera.position.set(
