@@ -35,8 +35,8 @@ body{
     z-index:100;
 }
 </style>
-
 </head>
+
 <body>
 
 <div id="loading">Загрузка модели...</div>
@@ -56,7 +56,7 @@ scene.background = new THREE.Color(0xf0f0f0);
 
 const camera = new THREE.PerspectiveCamera(
 45,
-window.innerWidth/window.innerHeight,
+window.innerWidth / window.innerHeight,
 0.1,
 100000
 );
@@ -162,34 +162,6 @@ console.error(error);
 
 );
 
-camera.position.set(
-maxDim,
-maxDim,
-maxDim
-);
-
-camera.lookAt(0,0,0);
-
-document.getElementById('loading').innerHTML =
-'Модель загружена';
-
-console.log('GLB успешно загружен');
-
-},
-
-undefined,
-
-(error)=>{
-
-document.getElementById('loading').innerHTML =
-'Ошибка загрузки модели';
-
-console.error(error);
-
-}
-
-);
-
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -198,10 +170,10 @@ window.addEventListener('click',(event)=>{
 if(!model) return;
 
 mouse.x =
-(event.clientX/window.innerWidth)*2-1;
+(event.clientX / window.innerWidth) * 2 - 1;
 
 mouse.y =
--(event.clientY/window.innerHeight)*2+1;
+-(event.clientY / window.innerHeight) * 2 + 1;
 
 raycaster.setFromCamera(
 mouse,
@@ -214,12 +186,12 @@ model.children,
 true
 );
 
-if(intersects.length>0){
+if(intersects.length > 0){
 
 const obj = intersects[0].object;
 
 document.getElementById('info').innerHTML =
-'<h3>'+(obj.name || 'Без имени')+'</h3>' +
+'<h3>' + (obj.name || 'Без имени') + '</h3>' +
 '<pre>' +
 JSON.stringify(obj.userData,null,2) +
 '</pre>';
@@ -233,7 +205,7 @@ console.log(obj);
 window.addEventListener('resize',()=>{
 
 camera.aspect =
-window.innerWidth/window.innerHeight;
+window.innerWidth / window.innerHeight;
 
 camera.updateProjectionMatrix();
 
