@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Просмотр модели GLB</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+}
+
+#loading{
+    position:absolute;
+    left:10px;
+    top:10px;
+    background:white;
+    padding:10px;
+    border:1px solid #ccc;
+    z-index:100;
+}
+
+#info{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:350px;
+    max-height:90vh;
+    overflow:auto;
+    background:white;
+    border:1px solid #ccc;
+    padding:10px;
+    z-index:100;
+}
+</style>
+
+</head>
+<body>
+
+<div id="loading">Загрузка модели...</div>
+
+<div id="info">
+Нажмите на объект модели
+</div>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.162.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.162.0/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.162.0/examples/jsm/loaders/GLTFLoader.js";
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf0f0f0);
+
+const camera = new THREE.PerspectiveCamera(
+45,
+window.innerWidth/window.innerHeight,
+0.1,
+100000
+);
+
+const renderer = new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(
+camera,
+renderer.domElement
+);
+
+controls.enableDamping = true;
+
+scene.add(new THREE.AmbientLight(0xffffff,3));
+
+const light = new THREE.DirectionalLight(0xffffff,3);
+light.position.set(100,100,100);
+scene.add(light);
+
+let model = null;
+
+const loader = new GLTFLoader();
+
+loader.load(
+
+'model_joined.glb',
+
+(gltf)=>{
+
+model = gltf.scene;
+
+scene.add(model);
+
+const box = new THREE.Box3().setFromObject(model);
+const center = box.getCenter(new THREE.Vector3());
+const size = box.getSize(new THREE.Vector3());
+
+model.position.sub(center);
+
+const maxDim = Math.max(
+size.x,
+size.y,
+size.z
+);
+
+camera.position.set(
+maxDim,
+maxDim,
+maxDim
+);
+
+camera.lookAt(0,0,0);
+
+document.getElementById('loading').innerHTML =
+'Модель загружена';
+
+console.log('GLB успешно загружен');
+
+},
+
+undefined,
+
+(error)=>{
+
+document.getElementById('loading').innerHTML =
+'Ошибка загрузки модели';
+
+console.error(error);
+
+}
+
+);
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click',(event)=>{
+
+if(!model) return;
+
+mouse.x =
+(event.clientX/window.innerWidth)*2-1;
+
+mouse.y =
+-(event.clientY/window.innerHeight)*2+1;
+
+raycaster.setFromCamera(
+mouse,
+camera
+);
+
+const intersects =
+raycaster.intersectObjects(
+model.children,
+true
+);
+
+if(intersects.length>0){
+
+const obj = intersects[0].object;
+
+document.getElementById('info').innerHTML =
+'<h3>'+(obj.name || 'Без имени')+'</h3>' +
+'<pre>' +
+JSON.stringify(obj.userData,null,2) +
+'</pre>';
+
+console.log(obj);
+
+}
+
+});
+
+window.addEventListener('resize',()=>{
+
+camera.aspect =
+window.innerWidth/window.innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+});
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+controls.update();
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
